@@ -1,17 +1,3 @@
-# ░░░░░░░░░░░▄▄▄████████████▄▄▄░░░░░░░░░░░
-# ░░░░░░▄▄██▀▀▀░░░░▄░░░░▄░░░░▀▀▀██▄▄░░░░░░
-# ░░░░▄█▀▀░▄▄██░░░░██▄▄██░░░░██▄▄░▀▀█▄░░░░
-# ░░▄█▀░▄█████░░░░░██████░░░░░█████▄░▀█▄░░
-# ░██░▄███████▄░░░▄██████▄░░░▄███████▄░██░
-# ██░██████████████████████████████████░██
-# ██░██████████████████████████████████░██
-# ██░██████████████████████████████████░██
-# ░██░▀████▀░░███▀████████▀███░░▀████▀░██░
-# ░░▀█▄░▀██▄░░░▀░░░░████░░░░▀░░░▄██▀░▄█▀░░
-# ░░░░▀█▄▄▀▀░░░░░░░░░██░░░░░░░░░▀▀▄▄█▀░░░░
-# ░░░░░░▀▀██▄▄▄░░░░░░░░░░░░░░▄▄▄██▀▀░░░░░░
-# ░░░░░░░░░░▀▀▀▀████████████▀▀▀▀░░░░░░░░░░
-
 import unicodedata
 import requests
 from pymongo import MongoClient
@@ -28,9 +14,9 @@ def validate_arguments():
     for key, val in dict_of_sites.items():
         print(f'{key}: {val}')
 
-    print('Выберите сайт. Для этого введите номер (от "1" to "3") или '
-          'введите "0" для поиска по всем сайтам')
-    input_string = input('Вы выбрали: ')
+    print('Select a site. To do this, enter a number (from "1" to "3") or '
+          'enter "0" to search all sites')
+    input_string = input('Your choice: ')
 
     validated_args = {}
     if input_string == '0':
@@ -42,7 +28,6 @@ def validate_arguments():
 
 
 def get_response(address):
-    # проверяем ответ от сервера - не послал ли он нас в щель козы
     headers = {
         'user-agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:98.0) Gecko/20100101 Firefox/98.0'}
 
@@ -67,6 +52,7 @@ def create_url(site) -> str:
 
 def validate_data(data):
     if data:
+        # data = data.getText()
         data = unicodedata.normalize("NFKD", data)
     else:
         data = None
@@ -74,31 +60,28 @@ def validate_data(data):
 
 
 def save_result_in_db(data: dict, collection) -> None:
-    # функц для записи в БиДе
-    if not is_data_in_db(data, collection):
+    if is_not_data_in_db(data, collection):
         try:
             collection.insert_one(data)
         except DuplicateKeyError:
             print(f"Document with id = {data['_id']} already exist")
 
 
-def is_data_in_db(data: dict, collection) -> bool:
-    # функц для проверки записей БиДе
+def is_not_data_in_db(data: dict, collection) -> bool:
     result = collection.find(
             {
-                'name': {'$eq': data['name']},
+                'link': {'$eq': data['link']},
             }
         )
-    if result:
+    if len(list(result)) == 0:
         return True
     else:
         return False
 
 
 def connect_2_db_server(address=None):
-    # функция подключения к серваку
     try:
-        return MongoClient('127.0.0.1', 27017)
+        return MongoClient('127.0.0.1')
     except ConnectionError:
         print('Ошибка соедниения с базой данных')
         return None
